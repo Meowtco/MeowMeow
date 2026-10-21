@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>메트코의 작업실 ✦</title>
+  <style>
+    :root {
+      --bg-color: #0f1117;
+      --card-bg: rgba(22, 27, 38, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text-main: #e6e8ee;
+      --text-sub: #8b92a5;
+      --accent-color: #ffb7c5;
+      --accent-secondary: #a0c4ff;
+      --star-color: #fff3b0;
+      --player-bg: rgba(18, 22, 32, 0.95);
+      --modal-bg: #181d28;
+      --input-bg: rgba(255, 255, 255, 0.05);
+      --icon-color: #e6e8ee;
+      --badge-admin: #ffb7c5;
+      --badge-guest: #a0c4ff;
+      --waveform-active: #ffb7c5;
+      --waveform-idle: rgba(255, 255, 255, 0.12);
+    }
+
+    [data-theme="light"] {
+      --bg-color: #f7f9fc;
+      --card-bg: rgba(255, 255, 255, 0.85);
+      --card-border: rgba(0, 0, 0, 0.06);
+      --text-main: #2b303a;
+      --text-sub: #7a8290;
+      --accent-color: #72efdd;
+      --accent-secondary: #9bf6ff;
+      --star-color: #ffe680;
+      --player-bg: rgba(255, 255, 255, 0.96);
+      --modal-bg: #ffffff;
+      --input-bg: rgba(0, 0, 0, 0.03);
+      --icon-color: #2b303a;
+      --waveform-active: #53b3cb;
+      --waveform-idle: rgba(0, 0, 0, 0.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', -apple-system, sans-serif; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+    body { background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; padding-bottom: 115px; overflow-x: hidden; }
+
+    #trailCanvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; }
+
+    /* Header */
+    header { display: flex; justify-content: space-between; align-items: center; padding: 24px 32px; max-width: 1200px; margin: 0 auto; }
+    .logo { font-size: 1.3rem; font-weight: 700; display: flex; align-items: center; gap: 8px; letter-spacing: -0.5px; }
+    .logo-star { color: var(--accent-color); font-size: 1.2rem; display: inline-block; animation: softGlow 2.5s ease-in-out infinite alternate; }
+    @keyframes softGlow {
+      0% { text-shadow: 0 0 4px var(--accent-color), 0 0 10px rgba(255, 183, 197, 0.3); transform: scale(1); }
+      100% { text-shadow: 0 0 12px var(--accent-color), 0 0 22px var(--accent-color), 0 0 32px rgba(255, 255, 255, 0.8); transform: scale(1.1); }
+    }
+
+    .header-actions { display: flex; gap: 10px; align-items: center; }
+
+    /* Mode Badge */
+    .mode-badge { font-size: 0.75rem; font-weight: 600; padding: 6px 12px; border-radius: 20px; background: var(--input-bg); border: 1px solid var(--card-border); display: flex; align-items: center; gap: 6px; }
+    .mode-badge.admin { color: #111; background: var(--badge-admin); border-color: var(--badge-admin); }
+    .mode-badge.guest { color: var(--text-main); }
+
+    .header-btn { background: var(--card-bg); border: 1px solid var(--card-border); color: var(--icon-color); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); padding: 0; }
+    .header-btn svg { width: 18px; height: 18px; fill: currentColor; }
+    .header-btn:hover { border-color: var(--accent-color); transform: scale(1.05); }
+
+    main { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+
+    /* Dropzone (Admin Only) */
+    .dropzone {
+      border: 2px dashed var(--card-border); background: var(--card-bg);
+      border-radius: 20px; padding: 32px 20px; text-align: center;
+      cursor: pointer; margin-bottom: 32px; backdrop-filter: blur(10px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    }
+    .dropzone:hover, .dropzone.dragover { border-color: var(--accent-color); background: rgba(160, 196, 255, 0.05); }
+    .star-icon-big { font-size: 2.8rem; color: var(--accent-color); display: inline-block; animation: pulseStar 3.5s infinite ease-in-out; }
+    @keyframes pulseStar { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.12); opacity: 1; } }
+    .dropzone-text { font-size: 0.95rem; font-weight: 600; color: var(--text-main); }
+    .dropzone-sub { font-size: 0.8rem; color: var(--text-sub); }
+
+    /* Filter Bar */
+    .filter-bar { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
+    .filter-btn { background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-sub); padding: 8px 18px; border-radius: 30px; font-size: 0.85rem; cursor: pointer; }
+    .filter-btn.active { background: var(--accent-color); color: #111; font-weight: 600; border-color: var(--accent-color); }
+
+    /* Track Grid */
+    .track-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+    .track-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 16px; position: relative; display: flex; flex-direction: column; gap: 12px; backdrop-filter: blur(10px); }
+    .track-card:hover { border-color: var(--accent-secondary); transform: translateY(-2px); transition: all 0.2s; }
+    
+    .cover-box { width: 100%; height: 160px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; position: relative; overflow: hidden; background-size: cover; background-position: center; }
+    .cover-pink { background: linear-gradient(135deg, #ffc6ff, #ffadad); color: #fff; }
+    .cover-yellow { background: linear-gradient(135deg, #fdffb6, #ffd6a5); color: #555; }
+    .cover-sky { background: linear-gradient(135deg, #9bf6ff, #a0c4ff); color: #fff; }
+    .cover-white { background: linear-gradient(135deg, #ffffff, #e2e2e2); color: #888; }
+
+    .track-info { display: flex; flex-direction: column; gap: 4px; }
+    .track-title { font-size: 1.05rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .track-meta { display: flex; gap: 8px; font-size: 0.75rem; color: var(--text-sub); }
+    .track-tag { background: var(--input-bg); padding: 2px 8px; border-radius: 6px; border: 1px solid var(--card-border); }
+    .track-memo { font-size: 0.8rem; color: var(--text-sub); line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; margin-top: 4px; }
+
+    .card-actions { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 8px; }
+    .play-btn { background: var(--accent-color); color: #111; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .play-btn:hover { opacity: 0.9; }
+
+    .icon-btn-group { display: flex; gap: 6px; align-items: center; }
+    .icon-btn { background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-sub); border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; }
+    .icon-btn svg { width: 14px; height: 14px; fill: currentColor; }
+    .icon-btn:hover { color: var(--text-main); border-color: var(--accent-color); background: rgba(255,255,255,0.08); }
+    .icon-btn.delete-btn:hover { color: #ff6b6b; border-color: #ff6b6b; background: rgba(255,107,107,0.1); }
+
+    /* Player Bar */
+    .player-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--player-bg); border-top: 1px solid var(--card-border); padding: 10px 24px 8px 24px; backdrop-filter: blur(15px); z-index: 100; display: flex; flex-direction: column; gap: 6px; max-width: 1200px; margin: 0 auto; border-radius: 16px 16px 0 0; box-shadow: 0 -8px 20px rgba(0,0,0,0.25); }
+    .player-main { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .player-left { display: flex; align-items: center; gap: 10px; width: 220px; }
+    .player-cover { width: 34px; height: 34px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; background-size: cover; background-position: center; flex-shrink: 0; }
+    .player-title-box { display: flex; flex-direction: column; overflow: hidden; }
+    .player-title { font-size: 0.88rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .player-time { font-size: 0.7rem; color: var(--text-sub); margin-top: 1px; }
+
+    .player-center { display: flex; align-items: center; gap: 10px; }
+    .play-circle-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-color); color: #111; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+    .ab-switch { display: flex; gap: 4px; background: var(--input-bg); border: 1px solid var(--card-border); padding: 2px; border-radius: 18px; }
+    .ab-btn { background: transparent; border: none; color: var(--text-sub); font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 14px; cursor: pointer; }
+    .ab-btn.active { background: var(--accent-color); color: #111; }
+
+    .player-right { width: 220px; display: flex; justify-content: flex-end; }
+    .waveform-container { width: 100%; height: 32px; cursor: pointer; position: relative; border-radius: 6px; overflow: hidden; background: var(--input-bg); margin-top: 4px; }
+    canvas#waveformCanvas { width: 100%; height: 100%; display: block; }
+
+    /* Modals */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 200; }
+    .modal-overlay.open { display: flex !important; }
+    .modal { background: var(--modal-bg); border: 1px solid var(--card-border); border-radius: 20px; width: 90%; max-width: 400px; padding: 24px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); box-sizing: border-box; text-align: center; }
+    .modal-title { font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .modal-subtitle { font-size: 0.82rem; color: var(--text-sub); }
+    
+    .modal input[type="password"],
+    .modal input[type="text"], 
+    .modal select, 
+    .modal textarea { width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main); padding: 10px 12px; border-radius: 10px; font-size: 0.9rem; outline: none; box-sizing: border-box; text-align: left; }
+    .modal-btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; width: 100%; }
+    .save-btn { background: var(--accent-color); color: #111; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+    .cancel-btn { background: var(--input-bg); color: var(--text-sub); border: 1px solid var(--card-border); padding: 10px 20px; border-radius: 10px; cursor: pointer; }
+    .error-text { color: #ff6b6b; font-size: 0.8rem; text-align: center; }
+
+    .loading-spinner { font-size: 0.9rem; color: var(--text-sub); margin: 20px 0; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <canvas id="trailCanvas"></canvas>
+
+  <header>
+    <div class="logo">
+      <span class="logo-star">✦</span> 메트코의 작업실
+    </div>
+    <div class="header-actions">
+      <div id="modeBadge" class="mode-badge guest">
+        <span id="badgeIcon">🎧</span> <span id="badgeText">청음 전용 모드</span>
+      </div>
+      <button class="header-btn" id="adminAuthBtn" title="사이트 관리는 GitHub 저장소에서 합니다." style="display:none;">
+        <svg id="adminLockIcon" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+      </button>
+      <button class="header-btn" id="themeToggle" title="모드 변경">
+        <svg id="themeSvg" viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Dropzone: Admin Only -->
+    <div class="dropzone" id="dropzone" style="display:none;" title="음악 파일을 여기에 드래그하거나 클릭하여 업로드하세요">
+      <div class="star-icon-big">✦</div>
+      <div class="dropzone-text">음악 파일 드래그 & 드롭 또는 클릭하여 업로드</div>
+      <div class="dropzone-sub">클라우드에 자동으로 저장되어 누구나 언제든 들을 수 있습니다</div>
+      <input type="file" id="fileInput" accept="audio/*" multiple style="display:none;">
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-btn active" data-cat="all">전체보기</button>
+      <button class="filter-btn" data-cat="완성곡">완성곡</button>
+      <button class="filter-btn" data-cat="스케치">스케치 / 아이디어</button>
+      <button class="filter-btn" data-cat="작업중">미완성 / 작업중</button>
+    </div>
+
+    <div id="loadingText" class="loading-spinner">✦ 동기화 중...</div>
+    <div class="track-grid" id="trackGrid"></div>
+  </main>
+
+  <!-- Player Bar -->
+  <div class="player-bar" id="playerBar" style="display:none;">
+    <div class="player-main">
+      <div class="player-left">
+        <div class="player-cover cover-pink" id="playerCover">✦</div>
+        <div class="player-title-box">
+          <div class="player-title" id="playerTitle">노래 제목</div>
+          <div class="player-time" id="playerTime">0:00 / 0:00</div>
+        </div>
+      </div>
+
+      <div class="player-center">
+        <button class="play-circle-btn" id="globalPlayBtn" title="재생 / 일시정지">
+          <svg id="playIconSvg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <div class="ab-switch">
+          <button class="ab-btn active" id="btnVersionA">A</button>
+          <button class="ab-btn" id="btnVersionB">B</button>
+        </div>
+      </div>
+
+      <div class="player-right"></div>
+    </div>
+
+    <div class="waveform-container" id="waveformContainer">
+      <canvas id="waveformCanvas"></canvas>
+    </div>
+  </div>
+
+  <script>
+    let isAdmin = false;
+
+    const modeBadge = document.getElementById('modeBadge');
+    const badgeIcon = document.getElementById('badgeIcon');
+    const badgeText = document.getElementById('badgeText');
+    const dropzone = document.getElementById('dropzone');
+
+    function updateModeUI() {
+      if (isAdmin) {
+        modeBadge.className = 'mode-badge admin';
+        badgeIcon.textContent = '👑';
+        badgeText.textContent = '관리자 로그인됨';
+        dropzone.style.display = 'flex';
+      } else {
+        modeBadge.className = 'mode-badge guest';
+        badgeIcon.textContent = '🎧';
+        badgeText.textContent = '청음 전용 모드';
+        dropzone.style.display = 'none';
+      }
+      renderTracks();
+    }
+
+    const themeToggle = document.getElementById('themeToggle');
+    const themeSvg = document.getElementById('themeSvg');
+    const sunSvg = '<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>';
+    const moonSvg = '<path d="M12.3 2a10 10 0 0 0-1.9 20 10 10 0 0 0 9.2-6.1 0.8 0.8 0 0 0-0.7-1.1 8 8 0 0 1-6.6-12.1 0.8 0.8 0 0 0-0.8-1.2z"/>';
+
+    themeToggle.addEventListener('click', () => {
+      const isLight = document.body.getAttribute('data-theme') === 'light';
+      if (isLight) {
+        document.body.removeAttribute('data-theme');
+        themeSvg.innerHTML = sunSvg;
+      } else {
+        document.body.setAttribute('data-theme', 'light');
+        themeSvg.innerHTML = moonSvg;
+      }
+      drawWaveform();
+    });
+
+    /* Trail Canvas */
+    const trailCanvas = document.getElementById('trailCanvas');
+    const tCtx = trailCanvas.getContext('2d');
+    let lastX = -100, lastY = -100, particles = [];
+
+    function resizeTrailCanvas() {
+      trailCanvas.width = window.innerWidth;
+      trailCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeTrailCanvas);
+    resizeTrailCanvas();
+
+    window.addEventListener('mousemove', (e) => {
+      const curX = e.clientX, curY = e.clientY;
+      const dist = Math.hypot(curX - lastX, curY - lastY);
+      if (dist > 8) {
+        const steps = Math.min(Math.floor(dist / 12), 4);
+        for (let i = 0; i <= steps; i++) {
+          const interpX = lastX + (curX - lastX) * (i / Math.max(steps, 1));
+          const interpY = lastY + (curY - lastY) * (i / Math.max(steps, 1));
+          if (Math.random() < 0.45) {
+            particles.push({
+              x: interpX + (Math.random() - 0.5) * 6,
+              y: interpY + (Math.random() - 0.5) * 6,
+              size: Math.random() * 9 + 4,
+              alpha: Math.random() * 0.4 + 0.5,
+              twinkleSpeed: Math.random() * 0.1 + 0.03,
+              twinklePhase: Math.random() * Math.PI * 2,
+              speedY: (Math.random() - 0.5) * 0.3,
+              speedX: (Math.random() - 0.5) * 0.3,
+              decay: 0.012
+            });
+          }
+        }
+        lastX = curX; lastY = curY;
+      }
+    });
+
+    function animateTrail() {
+      tCtx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
+      for (let i = 0; i < particles.length; i++) {
+        let p = particles[i];
+        p.alpha -= p.decay; p.x += p.speedX; p.y += p.speedY; p.twinklePhase += p.twinkleSpeed;
+        if (p.alpha <= 0) { particles.splice(i, 1); i--; continue; }
+        tCtx.save();
+        tCtx.globalAlpha = Math.max(0, p.alpha + Math.sin(p.twinklePhase) * 0.15);
+        tCtx.fillStyle = '#fff3b0';
+        tCtx.font = `${p.size}px sans-serif`;
+        tCtx.fillText('✦', p.x, p.y);
+        tCtx.restore();
+      }
+      requestAnimationFrame(animateTrail);
+    }
+    animateTrail();
+
+    let tracks = [];
+    let activeTrack = null;
+    let currentVersion = 'A';
+    let currentCategory = 'all';
+    let editingTrackId = null;
+
+    const audioA = new Audio();
+    const audioB = new Audio();
+    audioA.crossOrigin = "anonymous";
+    audioB.crossOrigin = "anonymous";
+    let isPlaying = false;
+
+    let audioCtx = null, analyser = null, sourceA = null, sourceB = null, dataArray = null;
+
+    function initWebAudio() {
+      if (audioCtx) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      sourceA = audioCtx.createMediaElementSource(audioA);
+      sourceB = audioCtx.createMediaElementSource(audioB);
+      sourceA.connect(analyser);
+      sourceB.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+    }
+
+    const trackGrid = document.getElementById('trackGrid');
+    const globalPlayBtn = document.getElementById('globalPlayBtn');
+    const playIconSvg = document.getElementById('playIconSvg');
+    const playerTime = document.getElementById('playerTime');
+    const canvas = document.getElementById('waveformCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const playSvgPath = '<path d="M8 5v14l11-7z"/>';
+    const pauseSvgPath = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentCategory = btn.dataset.cat;
+        renderTracks();
+      });
+    });
+
+    function renderTracks() {
+      trackGrid.innerHTML = '';
+      const filtered = currentCategory === 'all' ? tracks : tracks.filter(t => t.category === currentCategory);
+
+      // Track metadata can come from Firestore, so escape it before inserting it into HTML.
+      const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[char]);
+
+      filtered.forEach(t => {
+        const card = document.createElement('div');
+        card.className = 'track-card';
+        
+        const styleAttr = t.customImgUrl ? `style="background-image: url('${t.customImgUrl}');"` : '';
+        const coverContent = t.customImgUrl ? '' : '✦';
+
+        const adminButtonsHTML = isAdmin ? `
+          <div class="icon-btn-group">
+            <button class="icon-btn" onclick="openEditModal(${t.id})" title="편집">
+              <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            </button>
+            <button class="icon-btn delete-btn" onclick="deleteTrack(${t.id})" title="삭제">
+              <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+            </button>
+          </div>
+        ` : '';
+
+        card.innerHTML = `
+          <div class="cover-box ${t.cover}" ${styleAttr}>${coverContent}</div>
+          <div class="track-info">
+          <div class="track-title">${escapeHtml(t.title)}</div>
+            <div class="track-meta">
+              <span class="track-tag">${escapeHtml(t.category)}</span>
+              ${t.bpm ? `<span class="track-tag">${escapeHtml(t.bpm)}</span>` : ''}
+            </div>
+            ${t.memo ? `<div class="track-memo">${escapeHtml(t.memo)}</div>` : ''}
+          </div>
+          <div class="card-actions">
+            <button class="play-btn" onclick="playTrack(${t.id})">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> 재생
+            </button>
+            ${adminButtonsHTML}
+          </div>
+        `;
+        trackGrid.appendChild(card);
+      });
+    }
+
+    async function deleteTrack(id) {
+      if (!isAdmin) return;
+      const track = tracks.find(t => t.id === id);
+      if (window.deleteTrackFromCloud && track) await window.deleteTrackFromCloud(track);
+      tracks = tracks.filter(t => t.id !== id);
+      renderTracks();
+    }
+
+    async function playTrack(id) {
+      initWebAudio();
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+      const targetTrack = tracks.find(t => t.id === id);
+      if (!targetTrack) return;
+
+      if (!activeTrack || activeTrack.id !== id) {
+        audioA.currentTime = 0;
+        audioB.currentTime = 0;
+      }
+
+      activeTrack = targetTrack;
+
+      audioA.src = activeTrack.fileAUrl || (typeof activeTrack.fileA === 'string' ? activeTrack.fileA : URL.createObjectURL(activeTrack.fileA));
+      if (activeTrack.fileBUrl || activeTrack.fileB) {
+        audioB.src = activeTrack.fileBUrl || (typeof activeTrack.fileB === 'string' ? activeTrack.fileB : URL.createObjectURL(activeTrack.fileB));
+      } else {
+        audioB.removeAttribute('src');
+      }
+
+      document.getElementById('playerBar').style.display = 'flex';
+      document.getElementById('playerTitle').textContent = activeTrack.title;
+      
+      const playerCover = document.getElementById('playerCover');
+      if (activeTrack.customImgUrl) {
+        playerCover.style.backgroundImage = `url('${activeTrack.customImgUrl}')`;
+        playerCover.textContent = '';
+      } else {
+        playerCover.style.backgroundImage = '';
+        playerCover.className = `player-cover ${activeTrack.cover}`;
+        playerCover.textContent = '✦';
+      }
+
+      currentVersion = 'A';
+      document.getElementById('btnVersionA').classList.add('active');
+      document.getElementById('btnVersionB').classList.remove('active');
+
+      isPlaying = true;
+      playIconSvg.innerHTML = pauseSvgPath;
+      
+      await safePlay(audioA);
+      
+      setTimeout(() => {
+        resizeWaveformCanvas();
+        requestAnimationFrame(drawWaveform);
+      }, 50);
+    }
+
+    async function safePlay(audioObj) {
+      try {
+        await audioObj.play();
+      } catch (err) {
+        if (err.name !== 'AbortError') console.error(err);
+      }
+    }
+
+    async function switchVersion(ver) {
+      if (ver === 'B' && (!activeTrack || (!activeTrack.fileBUrl && !activeTrack.fileB))) return;
+      const currentAudio = currentVersion === 'A' ? audioA : audioB;
+      currentVersion = ver;
+      const curTime = currentAudio.currentTime || 0;
+      
+      if (ver === 'A') {
+        audioB.pause();
+        audioA.currentTime = curTime;
+        if (isPlaying) await safePlay(audioA);
+        document.getElementById('btnVersionA').classList.add('active');
+        document.getElementById('btnVersionB').classList.remove('active');
+      } else {
+        audioA.pause();
+        audioB.currentTime = curTime;
+        if (isPlaying) await safePlay(audioB);
+        document.getElementById('btnVersionB').classList.add('active');
+        document.getElementById('btnVersionA').classList.remove('active');
+      }
+    }
+
+    document.getElementById('btnVersionA').addEventListener('click', () => switchVersion('A'));
+    document.getElementById('btnVersionB').addEventListener('click', () => switchVersion('B'));
+
+    globalPlayBtn.addEventListener('click', async () => {
+      initWebAudio();
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+      const curAudio = currentVersion === 'A' ? audioA : audioB;
+      if (isPlaying) {
+        curAudio.pause();
+        playIconSvg.innerHTML = playSvgPath;
+        isPlaying = false;
+      } else {
+        await safePlay(curAudio);
+        playIconSvg.innerHTML = pauseSvgPath;
+        isPlaying = true;
+        requestAnimationFrame(drawWaveform);
+      }
+    });
+
+    function formatTime(sec) {
+      if (isNaN(sec) || !isFinite(sec)) return "0:00";
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    function updateTimeDisplay() {
+      const curAudio = currentVersion === 'A' ? audioA : audioB;
+      const current = curAudio.currentTime || 0;
+      const duration = curAudio.duration || 0;
+      playerTime.textContent = `${formatTime(current)} / ${formatTime(duration)}`;
+    }
+
+    [audioA, audioB].forEach(a => {
+      a.addEventListener('timeupdate', updateTimeDisplay);
+      a.addEventListener('ended', () => {
+        isPlaying = false;
+        playIconSvg.innerHTML = playSvgPath;
+      });
+    });
+
+    const waveformContainer = document.getElementById('waveformContainer');
+    waveformContainer.addEventListener('click', (e) => {
+      const rect = waveformContainer.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+      const curAudio = currentVersion === 'A' ? audioA : audioB;
+      if (curAudio.duration) {
+        const targetTime = curAudio.duration * ratio;
+        audioA.currentTime = targetTime;
+        audioB.currentTime = targetTime;
+      }
+    });
+
+    function resizeWaveformCanvas() {
+      if (!canvas) return;
+      canvas.width = waveformContainer.clientWidth || 800;
+      canvas.height = waveformContainer.clientHeight || 32;
+    }
+
+    function drawWaveform() {
+      if (!canvas.width || canvas.width !== waveformContainer.clientWidth) {
+        resizeWaveformCanvas();
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const curAudio = currentVersion === 'A' ? audioA : audioB;
+      const progressRatio = curAudio.duration ? (curAudio.currentTime / curAudio.duration) : 0;
+
+      const bars = 95;
+      const barWidth = canvas.width / bars;
+
+      const computedStyle = getComputedStyle(document.documentElement);
+      const activeColor = computedStyle.getPropertyValue('--waveform-active').trim() || '#53b3cb';
+      const idleColor = computedStyle.getPropertyValue('--waveform-idle').trim() || 'rgba(0,0,0,0.15)';
+
+      if (analyser && isPlaying && dataArray) {
+        analyser.getByteFrequencyData(dataArray);
+      }
+
+      for (let i = 0; i < bars; i++) {
+        let h = 4;
+        if (isPlaying && dataArray) {
+          const index = Math.floor((i / bars) * (dataArray.length / 2));
+          const val = dataArray[index] || 0;
+          h = Math.max(4, (val / 255) * (canvas.height - 4));
+        } else {
+          h = Math.sin(i * 0.2) * 2 + 6;
+        }
+
+        const barX = i * barWidth;
+        const isPlayed = (barX / canvas.width) <= progressRatio;
+
+        ctx.fillStyle = isPlayed ? activeColor : idleColor;
+        ctx.fillRect(barX, (canvas.height - h) / 2, Math.max(1, barWidth - 2), h);
+      }
+
+      if (isPlaying) {
+        requestAnimationFrame(drawWaveform);
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      resizeWaveformCanvas();
+      drawWaveform();
+    });
+
+    updateModeUI();
+    loadTrackList();
+
+    async function loadTrackList() {
+      try {
+        const response = await fetch('./tracks.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        if (!Array.isArray(data)) throw new Error('tracks.json must contain an array');
+        tracks = data;
+        document.getElementById('loadingText').style.display = 'none';
+        renderTracks();
+      } catch (error) {
+        console.error('곡 목록을 불러오지 못했습니다:', error);
+        document.getElementById('loadingText').textContent = '곡 목록을 불러오지 못했습니다. tracks.json을 확인해주세요.';
+      }
+    }
+  </script>
+</body>
+</html>
