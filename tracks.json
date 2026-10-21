@@ -1,15 +1,4 @@
 [
-  {
-    "id": 1,
-    "title": "Synthwave",
-    "category": "스케치",
-    "bpm": "",
-    "memo": "",
-    "cover": "cover-pink",
-    "fileAUrl": "audio/Synthwave.flac",
-    "fileBUrl": null,
-    "customImgUrl": null
-  },
    {
     "id": 2,
     "title": "JustABeat",
