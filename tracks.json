@@ -8,7 +8,7 @@
     "cover": "cover-sky",
     "fileAUrl": "audio/Antarctica.mp3",
     "fileBUrl": null,
-    "customImgUrl": null
+    "customImgUrl": "image/Antarctica.png"
   },
    {
     "id": 2,
@@ -20,5 +20,16 @@
     "fileAUrl": "audio/Synthwave.flac",
     "fileBUrl": null,
     "customImgUrl": null
+  },
+   {
+    "id": 3,
+    "title": "망한거",
+    "category": "미완성",
+    "bpm": "",
+    "memo": "",
+    "cover": "cover-sky",
+    "fileAUrl": "audio/IDKIDK,opus",
+    "fileBUrl": null,
+    "customImgUrl": "image/bkgif.gif"
   }
 ]
