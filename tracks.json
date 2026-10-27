@@ -31,5 +31,16 @@
     "fileAUrl": "audio/IDKIDK.opus",
     "fileBUrl": null,
     "customImgUrl": "image/bkgif.gif"
+  }.
+   {
+    "id": 4,
+    "title": "별쫓는놈",
+    "category": "작업중",
+    "bpm": "180",
+    "memo": "리듬게임음악난이도가너무높아서이제야도전해봄",
+    "cover": "cover-pink",
+    "fileAUrl": "audio/StellarchaserDemo.opus",
+    "fileBUrl": null,
+    "customImgUrl": ""
   }
 ]
